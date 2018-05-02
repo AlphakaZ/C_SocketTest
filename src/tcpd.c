@@ -13,10 +13,9 @@
 
 void l2b(char* str){
     for(int i=0;i<=strlen(str);i++){
-    /* アルファベットの小文字なら変換 */
-    if(str[i]>=97&&str[i]<=122)
-      str[i]=str[i]-32;
-  }
+        if(str[i]>=97&&str[i]<=122)
+        str[i]=str[i]-32;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "connection closed by foreign host.\n");
                 break;
             }
-            
+            l2b(recvBuffer);
             if((sendMsgSize = send(clitSock, recvBuffer, recvMsgSize, 0)) < 0){
                 perror("send() failed.");
                 exit(EXIT_FAILURE);
