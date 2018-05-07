@@ -64,12 +64,14 @@ int main(int argc, char* argv[]){
 
         int byteRcvd  = 0;
         int byteIndex = 0;
-        while (byteIndex < MSGSIZE) {
+        while (byteIndex < MSGSIZE) {//文字はどんどん追加されてく
             // recv(接続が確立したソケットディスクリプタ, 受信メッセージのポインタ,受信メッセージ長さ,　ブロック動作の指定
             // 以上のシステムコールを用いて、システムの受信ストリームからバイト文字列を受信する。
-            byteRcvd = recv(sock, &recvBuffer[byteIndex], 1, 0);
+            // *連続した文字列を受け取ることを前提にしているため、ナル文字は送受信に含まれないことに注意！
+            // サーバからデータが送られてくる際にナル文字は含まない。
+            byteRcvd = recv(sock, &recvBuffer[byteIndex], 1, 0);//recvは、バッファに新たな文字列か追加されるまで停止する(1文字ずつ進む)
             if (byteRcvd > 0) {
-                if (recvBuffer[byteIndex] == '\n'){
+                if (recvBuffer[byteIndex] == '\n'){//開業文字ならbreak
                     recvBuffer[byteIndex] = '\0';
                     if (strcmp(recvBuffer, "quit") == 0) {
                         close(sock);
@@ -78,6 +80,7 @@ int main(int argc, char* argv[]){
                         break;
                     }
                 }
+                // printf("%c\n",recvBuffer[byteIndex]);
                 byteIndex += byteRcvd;
             } else if(byteRcvd == 0){
                 perror("ERR_EMPTY_RESPONSE");

@@ -12,7 +12,8 @@
 #define BUFSIZE (MSGSIZE + 1)
 
 void l2b(char* str){
-    for(int i=0;i<=strlen(str);i++){
+    int n = strlen(str);
+    for(int i=0;i<=n;i++){
         if(str[i]>=97&&str[i]<=122)
         str[i]=str[i]-32;
     }
@@ -28,7 +29,6 @@ int main(int argc, char* argv[]) {
     unsigned int clitLen; // client internet socket address length
     char recvBuffer[BUFSIZE];
     int recvMsgSize, sendMsgSize;
-
 
     if ( argc != 2) {//引数のチェック
         fprintf(stderr, "argument count mismatch error.\n");
@@ -77,8 +77,13 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "connection closed by foreign host.\n");
                 break;
             }
-            l2b(recvBuffer);
+            // printf("Recv: %s",recvBuffer);
+            // l2b(recvBuffer);
+            strcpy(recvBuffer,"Return\n");//固定文字列
+            recvMsgSize = strlen("Return\n");
+
             if((sendMsgSize = send(clitSock, recvBuffer, recvMsgSize, 0)) < 0){
+            // if((sendMsgSize = send(clitSock,message,,0)) < 0){
                 perror("send() failed.");
                 exit(EXIT_FAILURE);
             } else if(sendMsgSize == 0){
