@@ -1,5 +1,7 @@
 // 参考・引用：https://qiita.com/tajima_taso/items/2f0606db7764580cf295
 
+
+
 #include <stdio.h> //printf(), fprintf(), perror()
 #include <sys/socket.h> //socket(), bind(), accept(), listen()
 #include <arpa/inet.h> // struct sockaddr_in, struct sockaddr, inet_ntoa()
