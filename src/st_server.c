@@ -15,7 +15,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#define DOCUMENT_ROOT ./html/
+#include <stdbool.h>
+
+#define DOCUMENT_ROOT "./html/"
+#define FILEPATH_LENGTH 256
 
 
 // サーバの実処理はここに記述される
@@ -117,19 +120,53 @@ void returnString(const char* str, ServerModule* sMdl)
 	        break;
 	    }
 	}
+	close(sMdl->clitSock);
 }
 
-void http(ServerModule* sMdl)
+/**
+ * メッセージ送信用関数
+ *
+ * @param fd   ソケットディスクリプタ
+ * @param *msg 送信するメッセージ
+ */
+static int send_msg(int fd, char *msg) {
+    int len;
+    len = strlen(msg);
+
+    // 指定されたメッセージ`msg`をソケットに送信
+    if (write(fd, msg, len) != len) {
+        fprintf(stderr, "error: writing.");
+    }
+
+    return len;
+}
+
+static bool isHttpFile(const char* filename){
+	char* file_ex = strstr(filename,".");
+	
+	if(file_ex == NULL)return false;
+
+	if(strcmp(file_ex,".html")==0 || strcmp(file_ex,".htm")==0){
+		return true;
+	}
+
+	return false;
+}
+
+// Todo: 関数ポインタで処理を渡せるようにする
+static void http(ServerModule* sMdl)
 {
 	int clitSock = sMdl->clitSock;
 
-	int len;		//ファイル読み込み時のバイトサイズ格納
-	int read_fd;	//要求ファイルを開くためのファイルディスクリプタ
+	// int len;		//ファイル読み込み時のバイトサイズ格納
+	int read_fd=-1;	//要求ファイルを開くためのファイルディスクリプタ
 	char buf[BUFSIZE];//ソケットからデータを読み取るバッファ
-	char method[16];//メソッド名?を格納
-	char uri_addr[256];//接続相手のアドレス
+	char method[16];//メソッド名を格納(GETとか)
+	char uri_addr[FILEPATH_LENGTH];//接続相手のアドレス
 	char http_ver[64];
-	char *uri_file// 接続要求のあったファイル名
+	
+	char* uri_file;// 接続要求のあったファイル名
+	// strcat(uri_file,DOCUMENT_ROOT);
 
 	if(read(clitSock, buf, BUFSIZE) <= 0){//readは、第4引数が0のrecvと同等
 		fprintf(stderr, "error: reading a request.\n");
@@ -138,23 +175,42 @@ void http(ServerModule* sMdl)
 
 	sscanf(buf, "%s %s %s", method, uri_addr, http_ver);
 	if (strcmp(method, "GET") != 0) {
-            send_msg(clitSock, "501 Not implemented.");
-            close(read_fd);
+		fprintf(stderr, "error: Method is no GET");
+        send_msg(clitSock, "501 Not implemented.");
+        close(clitSock);
+        return;
     }
 
-	uri_file = uri_addr + 1;
+	uri_file = uri_addr + 1;//行頭の/を取り除く
 
-	if((read_fd = open(uri_file, 0_RDONLY, 0666)) == -1){
+	if(!isHttpFile(uri_file)){
+		fprintf(stderr, "error: The file is not http file.");
+		close(clitSock);
+		return;
+	}
+
+	//ここでパスを取得する必要がある
+	char filepath[FILEPATH_LENGTH];
+	snprintf(filepath,FILEPATH_LENGTH,"%s%s",DOCUMENT_ROOT,uri_file);
+	
+	if((read_fd = open(filepath, O_RDONLY, 0666)) == -1){
 		send_msg(clitSock, "404 Not Found");
-		close(read_fd);
+		printf("404 error: %s",filepath);
+		close(clitSock);
+		return;
 	}
 
 	//HTTPヘッダを送信
 	send_msg(clitSock, "HTTP/1.0 200 OK\r\n");
 	send_msg(clitSock, "Content-Type: text/html\r\n");
-	send_msg(clitSock, "\n\r");
+	send_msg(clitSock, "\r\n");
 
 	// ファイルポインタを使ってファイルを読み込み、書き出す
+	write(clitSock, uri_addr,strlen(uri_addr));
+	printf("file: %s\n",filepath);
+	// FILE *fp;
+
+	close(clitSock);
 }
 
 // 動作関数
@@ -172,9 +228,8 @@ void runServer(ServerModule* sMdl)
 
         	printf("connected from %s.\n", inet_ntoa(sMdl->clitSockAddr.sin_addr));
         	// 常に"Return"と返却する
-        	returnString("Return\n",sMdl);
-
-	        close(sMdl->clitSock);
+        	// returnString("Return\n",sMdl);
+        	http(sMdl);
         }
     }
 }

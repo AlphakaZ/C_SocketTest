@@ -59,23 +59,33 @@ void setupClient(int argc, char** argv, ClientModule* cMdl){
 	connectToServer(cMdl);
 }
 
+//改行文字を取り除く
+static void lntrim(char *str) {  
+  char *p;  
+  p = strchr(str, '\n');  
+  if(p != NULL) {  
+    *p = '\0';  
+  }  
+}  
+
 int runClient(ClientModule* cMdl){
 
 	char recvBuffer[BUFSIZE]; //receive temporary buffer
     char sendBuffer[BUFSIZE];
-
-
+    char httpedSendBuffer[BUFSIZE];
 
 	while(1){
         // 入力待ち
-        printf("please enter the characters:");
+        printf("please enter the filename:\t");
         if (fgets(sendBuffer, BUFSIZE, stdin) == NULL){
             fprintf(stderr, "invalid input string.\n");
             exit(EXIT_FAILURE);
         }
+        lntrim(sendBuffer);
+        sprintf(httpedSendBuffer, "GET %s HTTP/1.0/\r\n",sendBuffer);
 
         //システムコールsend()で、データをリモートホストに送信
-        if (send(cMdl->sock, sendBuffer, strlen(sendBuffer), 0) <= 0) {
+        if (send(cMdl->sock, httpedSendBuffer, strlen(httpedSendBuffer), 0) <= 0) {
             perror("send() failed.");
             exit(EXIT_FAILURE);
         }
