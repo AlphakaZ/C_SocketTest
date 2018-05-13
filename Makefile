@@ -1,10 +1,25 @@
 all: tcpd tcpc
 
-tcpd: src/tcpd.c
-	gcc -Wall -o tcpd src/tcpd.c
+# サーバ側
 
-tcpc: src/tcpc.c
-	gcc -Wall -o tcpc src/tcpc.c
+tcpd: src/tcpd.c st_server.o
+	gcc -Wall -o tcpd src/tcpd.c st_server.o
+
+st_server.o: src/st_server.c
+	gcc -Wall -c src/st_server.c
+
+st_server.o: src/st_server.h
+
+
+# クライアント側	
+
+tcpc: src/tcpc.c st_client.o
+	gcc -Wall -o tcpc src/tcpc.c st_client.o
+
+st_client.o: src/st_client.c
+	gcc -Wall -c src/st_client.c
+
+st_client.o: src/st_client.h
 
 
 
