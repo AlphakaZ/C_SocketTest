@@ -82,7 +82,7 @@ int runClient(ClientModule* cMdl){
             exit(EXIT_FAILURE);
         }
         lntrim(sendBuffer);
-        sprintf(httpedSendBuffer, "GET %s HTTP/1.0/\r\n",sendBuffer);
+        sprintf(httpedSendBuffer, "GET %s HTTP/1.1/\r\n",sendBuffer);
 
         //システムコールsend()で、データをリモートホストに送信
         if (send(cMdl->sock, httpedSendBuffer, strlen(httpedSendBuffer), 0) <= 0) {

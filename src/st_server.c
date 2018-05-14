@@ -142,15 +142,29 @@ static int send_msg(int fd, char *msg) {
 }
 
 static bool isHttpFile(const char* filename){
-	char* file_ex = strstr(filename,".");
-	
-	if(file_ex == NULL)return false;
+	return strstr(filename,".html")!= 0 || strstr(filename,".htm") != 0;
+}
 
-	if(strcmp(file_ex,".html")==0 || strcmp(file_ex,".htm")==0){
-		return true;
+static int readTextFile(const char* file_name, char* data){
+	char a[256];//1行あたりのmax
+	int byteIndex=0;
+	FILE *f;
+
+	/* ファイルオープン */
+	if ((f = fopen(file_name, "r")) == NULL) {
+		fprintf(stderr, "%s\n", "error: can't read file.");
+		return EXIT_FAILURE;
 	}
 
-	return false;
+	while (fscanf(f, "%s", a) != EOF){
+		strcpy(&data[byteIndex],a);
+		byteIndex += strlen(a);
+	}
+	data[byteIndex] = '\0';
+
+	fclose(f);
+
+	return EXIT_SUCCESS;
 }
 
 // Todo: 関数ポインタで処理を渡せるようにする
@@ -184,7 +198,7 @@ static void http(ServerModule* sMdl)
 	uri_file = uri_addr + 1;//行頭の/を取り除く
 
 	if(!isHttpFile(uri_file)){
-		fprintf(stderr, "error: The file is not http file.");
+		fprintf(stderr, "error: The file is not http file.\n");
 		close(clitSock);
 		return;
 	}
@@ -206,10 +220,14 @@ static void http(ServerModule* sMdl)
 	send_msg(clitSock, "\r\n");
 
 	// ファイルポインタを使ってファイルを読み込み、書き出す
-	write(clitSock, uri_addr,strlen(uri_addr));
-	printf("file: %s\n",filepath);
+	// write(clitSock, uri_addr,strlen(uri_addr));
+	// printf("file: %s\n",filepath);
 	// FILE *fp;
 
+	char data[1024];
+
+	readTextFile(filepath,data);
+	write(clitSock,data,strlen(data));
 	close(clitSock);
 }
 
